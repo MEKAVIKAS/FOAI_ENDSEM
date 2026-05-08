@@ -28,28 +28,11 @@ export const fetchNewsByCategory = async (category = "technology", page = 1, for
 
   try {
     let response;
-    try {
-      response = await axios.get("/api/news", {
-        params: { category, page, pageSize: 20 },
-      });
-      if (!Array.isArray(response.data?.articles)) {
-        throw new Error("Local API proxy unavailable");
-      }
-    } catch (proxyError) {
-      const apiKey = import.meta.env.VITE_NEWS_API_KEY;
-      if (!apiKey) throw proxyError;
-
-      const categoryConfig = {
-        technology: { endpoint: "top-headlines", params: { category: "technology", country: "us" } },
-        space: { endpoint: "everything", params: { q: "space OR NASA OR astronomy", sortBy: "publishedAt", language: "en" } },
-        ai: { endpoint: "everything", params: { q: "artificial intelligence OR AI", sortBy: "publishedAt", language: "en" } },
-        world: { endpoint: "top-headlines", params: { category: "general", country: "us" } },
-        science: { endpoint: "top-headlines", params: { category: "science", country: "us" } },
-      }[category];
-
-      response = await axios.get(`https://newsapi.org/v2/${categoryConfig.endpoint}`, {
-        params: { ...categoryConfig.params, pageSize: 20, apiKey },
-      });
+    response = await axios.get("/api/news", {
+      params: { category, page, pageSize: 20 },
+    });
+    if (!Array.isArray(response.data?.articles)) {
+      throw new Error("News API proxy unavailable");
     }
 
     if (response.data && response.data.articles) {
@@ -79,25 +62,18 @@ export const searchNews = async (query, page = 1) => {
   }
 
   try {
-    const response = await axios.get("https://newsapi.org/v2/everything", {
-      params: {
-        q: query,
-        page,
-        pageSize: 20,
-        sortBy: "publishedAt",
-        apiKey: import.meta.env.VITE_NEWS_API_KEY,
-      },
-    });
-
-    if (response.data && response.data.articles) {
-      const articles = response.data.articles.map((article) =>
-        normalizeArticle(article, "search")
+    const localArticles = Object.keys(localStorage)
+      .filter((key) => key.startsWith("news_"))
+      .flatMap((key) => getStorageWithExpiration(key) || [])
+      .filter((article) =>
+        [article.title, article.description, article.source]
+          .join(" ")
+          .toLowerCase()
+          .includes(query.toLowerCase())
       );
 
-      setStorageWithExpiration(cacheKey, articles, 15);
-      return articles;
-    }
-    return [];
+    setStorageWithExpiration(cacheKey, localArticles, 15);
+    return localArticles;
   } catch (error) {
     console.warn("News search unavailable:", error.message || error);
     throw error;

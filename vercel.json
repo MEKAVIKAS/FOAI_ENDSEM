@@ -2,9 +2,5 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
-  "framework": "vite",
-  "env": {
-    "VITE_NEWS_API_KEY": "@vite_news_api_key",
-    "VITE_AI_TOKEN": "@vite_ai_token"
-  }
+  "framework": "vite"
 }
