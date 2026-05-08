@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/common/Navbar";
 import Sidebar from "./components/common/Sidebar";
+import BottomNavigation from "./components/common/BottomNavigation";
+import Footer from "./components/common/Footer";
 import Chatbot from "./components/chatbot/Chatbot";
 import HomePage from "./pages/HomePage";
 import NewsPage from "./pages/NewsPage";
@@ -45,16 +47,19 @@ function App() {
               sidebarOpen ? "md:ml-64" : "md:ml-0"
             }`}
           >
-            <div className="min-h-[calc(100vh-64px)] p-4 md:p-6 lg:p-8">
+            <div className="min-h-[calc(100vh-64px)] p-4 pb-24 md:p-6 lg:p-8">
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/news" element={<NewsPage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
+              <Footer />
             </div>
           </main>
         </div>
+
+        <BottomNavigation />
 
         {/* Floating Chatbot */}
         <Chatbot />

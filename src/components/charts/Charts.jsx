@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LineChart,
   Line,
@@ -14,10 +14,15 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 import useAppStore from "../../store/appStore";
-import { CHART_COLORS } from "../../constants";
+import { CHART_COLORS, NEWS_CATEGORIES, NEWS_CATEGORY_LABELS } from "../../constants";
+import { fetchNewsByCategory } from "../../services/newsService";
 
 const SpeedChart = () => {
   const { speedHistory } = useAppStore();
+  const data = useMemo(() => speedHistory.map((entry) => ({
+    time: entry.time?.substring(0, 5) || "",
+    speed: parseFloat(entry.speed) || 0,
+  })), [speedHistory]);
 
   if (!speedHistory || speedHistory.length === 0) {
     return (
@@ -30,11 +35,6 @@ const SpeedChart = () => {
       </motion.div>
     );
   }
-
-  const data = speedHistory.map((entry) => ({
-    time: entry.time?.substring(0, 5) || "",
-    speed: parseFloat(entry.speed) || 0,
-  }));
 
   return (
     <motion.div
@@ -72,31 +72,57 @@ const SpeedChart = () => {
 };
 
 const NewsDistributionChart = () => {
-  const { news } = useAppStore();
+  const { newsByCategory, setSelectedCategory } = useAppStore();
+  const [loading, setLoading] = useState(false);
 
-  if (!news || news.length === 0) {
+  useEffect(() => {
+    const missingCategories = NEWS_CATEGORIES.filter(
+      (category) => !newsByCategory[category]
+    );
+
+    if (missingCategories.length === 0) return;
+
+    let cancelled = false;
+    const loadCounts = async () => {
+      setLoading(true);
+      await Promise.allSettled(
+        missingCategories.map(async (category) => {
+          const articles = await fetchNewsByCategory(category, 1);
+          if (!cancelled) {
+            useAppStore.getState().setNewsForCategory(category, articles);
+          }
+        })
+      );
+      if (!cancelled) setLoading(false);
+    };
+
+    loadCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [newsByCategory]);
+
+  const data = useMemo(
+    () =>
+      NEWS_CATEGORIES.map((category) => ({
+        name: NEWS_CATEGORY_LABELS[category],
+        category,
+        value: newsByCategory[category]?.length || 0,
+      })).filter((item) => item.value > 0),
+    [newsByCategory]
+  );
+
+  if (loading && data.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="glass rounded-xl p-6 h-96 flex items-center justify-center"
       >
-        <p className="text-gray-400">No news data yet</p>
+        <p className="text-gray-400">Loading news distribution...</p>
       </motion.div>
     );
   }
-
-  // Count articles by category
-  const categoryCount = {};
-  news.forEach((article) => {
-    const category = article.category || "other";
-    categoryCount[category] = (categoryCount[category] || 0) + 1;
-  });
-
-  const data = Object.entries(categoryCount).map(([category, count]) => ({
-    name: category.charAt(0).toUpperCase() + category.slice(1),
-    value: count,
-  }));
 
   const colors = Object.values(CHART_COLORS);
 
@@ -119,6 +145,7 @@ const NewsDistributionChart = () => {
             fill="#8884d8"
             dataKey="value"
             isAnimationActive={true}
+            onClick={(slice) => setSelectedCategory(slice.category)}
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />

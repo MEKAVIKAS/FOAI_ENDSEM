@@ -1,12 +1,17 @@
-import React from "react";
-import { ExternalLink, Calendar, User, Eye } from "lucide-react";
+import { ExternalLink, Calendar, User, Eye, Bookmark } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatTimeAgo, truncateText } from "../../utils/helpers";
+import useAppStore from "../../store/appStore";
+import toast from "react-hot-toast";
 
 const NewsCard = ({ article, index }) => {
+  const { bookmarkedArticles, toggleBookmark } = useAppStore();
+  const bookmarked = bookmarkedArticles.some((item) => item.id === article.id);
+
   const handleBookmark = (e) => {
     e.preventDefault();
-    // TODO: Implement bookmarking
+    toggleBookmark(article);
+    toast.success(bookmarked ? "Bookmark removed" : "Article bookmarked");
   };
 
   return (
@@ -72,10 +77,15 @@ const NewsCard = ({ article, index }) => {
           </a>
           <button
             onClick={handleBookmark}
-            className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition"
-            title="Bookmark"
+            className={`px-3 py-2 rounded-lg transition ${
+              bookmarked
+                ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30"
+                : "bg-slate-700 hover:bg-slate-600"
+            }`}
+            title={bookmarked ? "Remove bookmark" : "Bookmark"}
+            aria-pressed={bookmarked}
           >
-            📌
+            <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
           </button>
         </div>
       </div>

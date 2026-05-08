@@ -1,22 +1,21 @@
-import React from "react";
+import { useMemo } from "react";
 import {
   Search,
-  Filter,
   RotateCw,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { debounce } from "../../utils/helpers";
 import useAppStore from "../../store/appStore";
-import { NEWS_CATEGORIES } from "../../constants";
+import { NEWS_CATEGORIES, NEWS_CATEGORY_LABELS } from "../../constants";
 
 const NewsFilter = ({ onSearch, onRefresh, loading }) => {
   const store = useAppStore();
   const { selectedCategory, sortBy, searchQuery } = store;
 
-  const handleSearchChange = debounce((value) => {
+  const handleSearchChange = useMemo(() => debounce((value) => {
     store.setSearchQuery(value);
     onSearch(value);
-  }, 300);
+  }, 300), [store, onSearch]);
 
   return (
     <motion.div
@@ -50,7 +49,7 @@ const NewsFilter = ({ onSearch, onRefresh, loading }) => {
           >
             {NEWS_CATEGORIES.map((cat) => (
               <option key={cat} value={cat} className="capitalize">
-                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {NEWS_CATEGORY_LABELS[cat]}
               </option>
             ))}
           </select>

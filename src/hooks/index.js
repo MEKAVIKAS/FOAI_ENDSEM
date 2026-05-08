@@ -14,8 +14,10 @@ export const useISSTracking = () => {
   const updateTimeRef = useRef(null);
 
   const updateISS = useCallback(async () => {
+    const actions = useAppStore.getState();
     try {
-      store.setISSLoading(true);
+      actions.setISSLoading(true);
+      actions.setApiStatus("iss", "loading");
       const data = await fetchISSLocation();
 
       // Calculate speed
@@ -37,33 +39,38 @@ export const useISSTracking = () => {
       const location = await reverseGeocode(data.latitude, data.longitude);
 
       // Update store
-      store.setISS({
+      actions.setISS({
         ...data,
-        speed: speed || 7660, // Average ISS speed ~7.66 km/s
+        speed: speed || 27600, // Average ISS speed is about 7.66 km/s.
         lastUpdate: new Date().toLocaleString(),
       });
 
-      store.setLocation(location);
+      actions.setLocation(location);
 
       // Add to speed history
-      store.addSpeedData({
+      actions.addSpeedData({
         time: new Date().toLocaleTimeString(),
-        speed: speed || 7660,
+        speed: speed || 27600,
         timestamp: Date.now(),
       });
 
       previousPosition.current = data;
       updateTimeRef.current = Date.now();
 
-      store.setISSError(null);
+      actions.setISSError(null);
+      actions.setApiStatus("iss", "online");
+      if (useAppStore.getState().soundEnabled) {
+        toast.success("New ISS update", { id: "iss-update", duration: 1200 });
+      }
     } catch (error) {
       console.error("Error updating ISS:", error);
-      store.setISSError(error.message || "Failed to fetch ISS data");
+      actions.setISSError(error.message || "Failed to fetch ISS data");
+      actions.setApiStatus("iss", "error");
       toast.error("Failed to update ISS data");
     } finally {
-      store.setISSLoading(false);
+      actions.setISSLoading(false);
     }
-  }, [store]);
+  }, []);
 
   useEffect(() => {
     // Fetch immediately
@@ -93,22 +100,26 @@ export const useAstronauts = () => {
   const store = useAppStore();
 
   const fetchData = useCallback(async () => {
+    const actions = useAppStore.getState();
     try {
-      store.setAstronautsLoading(true);
+      actions.setAstronautsLoading(true);
+      actions.setApiStatus("astronauts", "loading");
       const data = await fetchAstronauts();
-      store.setAstronauts({
+      actions.setAstronauts({
         total: data.total,
         list: data.astronauts,
       });
-      store.setAstronautsError(null);
+      actions.setAstronautsError(null);
+      actions.setApiStatus("astronauts", "online");
     } catch (error) {
       console.error("Error fetching astronauts:", error);
-      store.setAstronautsError(error.message || "Failed to fetch astronauts");
+      actions.setAstronautsError(error.message || "Failed to fetch astronauts");
+      actions.setApiStatus("astronauts", "error");
       toast.error("Failed to fetch astronaut data");
     } finally {
-      store.setAstronautsLoading(false);
+      actions.setAstronautsLoading(false);
     }
-  }, [store]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -129,36 +140,50 @@ export const useAstronauts = () => {
  * Custom hook for theme management
  */
 export const useTheme = () => {
-  const store = useAppStore();
+  const theme = useAppStore((state) => state.theme);
+  const isDark = useAppStore((state) => state.isDark);
+  const setTheme = useAppStore((state) => state.setTheme);
 
   useEffect(() => {
     // Apply theme on mount
     const html = document.documentElement;
-    if (store.theme === "dark") {
+    if (theme === "dark") {
       html.classList.add("dark");
-    } else if (store.theme === "light") {
+    } else if (theme === "light") {
       html.classList.remove("dark");
-    } else if (store.theme === "auto") {
+    } else if (theme === "auto") {
       if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
         html.classList.add("dark");
       } else {
         html.classList.remove("dark");
       }
     }
-  }, [store.theme]);
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemTheme = () => {
+      if (useAppStore.getState().theme === "auto") {
+        html.classList.toggle("dark", media.matches);
+        useAppStore.getState().setIsDark(media.matches);
+      }
+    };
+
+    handleSystemTheme();
+    media.addEventListener("change", handleSystemTheme);
+    return () => media.removeEventListener("change", handleSystemTheme);
+  }, [theme]);
 
   const toggleTheme = () => {
     const themes = ["light", "dark", "auto"];
-    const currentIndex = themes.indexOf(store.theme);
+    const currentIndex = themes.indexOf(theme);
     const nextTheme = themes[(currentIndex + 1) % themes.length];
-    store.setTheme(nextTheme);
+    setTheme(nextTheme);
     toast.success(`Theme changed to ${nextTheme}`);
   };
 
   return {
-    theme: store.theme,
-    isDark: store.isDark,
-    setTheme: store.setTheme,
+    theme,
+    isDark,
+    setTheme,
     toggleTheme,
   };
 };
@@ -173,16 +198,16 @@ export const useSidebar = () => {
     // Close sidebar on mobile by default
     const checkMobile = () => {
       if (window.innerWidth < 768) {
-        store.setSidebarOpen(false);
+        useAppStore.getState().setSidebarOpen(false);
       } else {
-        store.setSidebarOpen(true);
+        useAppStore.getState().setSidebarOpen(true);
       }
     };
 
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
-  }, [store]);
+  }, []);
 
   return {
     sidebarOpen: store.sidebarOpen,

@@ -1,130 +1,97 @@
 # ISS + AI News Intelligence Dashboard
 
-A modern, real-time web application that tracks the International Space Station (ISS), displays latest news articles, and includes an AI chatbot powered by Hugging Face that answers questions using only dashboard data.
+A production-ready React + Vite dashboard for live ISS tracking, people-in-space data, categorized news intelligence, grounded AI chat, and interactive analytics.
 
-## 🌟 Features
+## Features
 
-### ISS Live Tracking
-- **Real-time Location Updates**: ISS coordinates updated every 15 seconds
-- **Interactive Map**: Leaflet.js powered map with zoom, pan, and trajectory visualization
-- **Speed Calculation**: Accurate speed calculation using Haversine formula
-- **Location Detection**: Reverse geocoding to show nearest city/country
-- **Statistics**: Live stats card showing latitude, longitude, speed, and tracked positions
+- Live ISS tracking with 15-second refresh, manual refresh, Leaflet map, custom marker, trajectory polyline, fullscreen mode, nearest-place detection, and Haversine speed calculation.
+- People in Space module with astronaut names and spacecraft.
+- News dashboard with Technology, Space, AI, World, and Science categories, realtime debounced search, sorting, refresh, 15-minute localStorage caching, image cards, bookmarks, and retry states.
+- AI chatbot powered by Hugging Face Mistral that receives only structured dashboard context and falls back to: `I can only answer using the dashboard's current ISS and news data.`
+- Recharts analytics for ISS speed history and news category distribution with interactive category filtering.
+- Premium responsive UI with glassmorphism, dark/light/auto theme persistence, sticky navbar, desktop sidebar, mobile bottom navigation, footer, toasts, skeleton styling, animated cards, realtime clock, API status, and last synced timestamp.
+- Vercel serverless API proxies for ISS, geocoding, NewsAPI, and AI so production avoids mixed-content calls and keeps service tokens server-side.
 
-### Astronauts in Space
-- Display current number of people in space
-- List astronaut names and their spacecraft
-- Real-time data from Open Notify API
+## Tech Stack
 
-### News Dashboard
-- **Multi-Category Support**: Technology, Space, Science, Business, General
-- **Search & Filter**: Real-time search across titles and descriptions
-- **Sorting Options**: Sort by newest, oldest, or source
-- **Caching**: 15-minute local storage caching
-- **Responsive Cards**: Beautiful news article cards with images
-- **External Links**: Direct access to full articles
+React, Vite, Tailwind CSS, React Router, Zustand, Leaflet, Recharts, Axios, Framer Motion, React Hot Toast, Lucide React, localStorage.
 
-### AI Chatbot
-- **Context-Grounded**: Only answers using dashboard data (ISS, astronauts, news)
-- **Persistent History**: Stores last 30 messages in localStorage
-- **Export Chat**: Download conversation history as JSON
-- **Clear & Reset**: Easy chat management
+## Project Structure
 
-### Interactive Charts
-- **ISS Speed Chart**: Line chart showing speed history
-- **News Distribution**: Pie chart showing articles per category
-- **Real-time Updates**: Charts update automatically
-
-### Modern UI/UX
-- **Glassmorphism Design**: Beautiful frosted glass cards
-- **Dark/Light Theme**: Auto-detects system preference
-- **Smooth Animations**: Framer Motion transitions
-- **Responsive Design**: Perfect on mobile, tablet, and desktop
-
-## 🛠️ Tech Stack
-
-- React 19
-- Vite
-- Tailwind CSS
-- React Router
-- Zustand
-- Leaflet.js
-- Recharts
-- Framer Motion
-- Axios
-- React Hot Toast
-
-## 📋 Requirements
-
-- Node.js 16+
-- npm or yarn
-
-## 🚀 Getting Started
-
-### 1. Install Dependencies
-
-```bash
-npm install --legacy-peer-deps
+```text
+api/                  Vercel serverless API proxies
+src/
+  api/                Axios clients
+  assets/             Static assets
+  components/
+    common/           Navbar, sidebar, mobile nav, footer
+    iss/              ISS map, stats, astronauts
+    news/             News filters and cards
+    chatbot/          Grounded AI chat
+    charts/           Recharts visualizations
+  hooks/              ISS, astronauts, theme, sidebar hooks
+  layouts/            Layout-ready folder
+  pages/              Dashboard routes
+  services/           ISS, news, AI services
+  store/              Zustand global state
+  utils/              Helpers and Haversine math
+  constants/          Shared constants
+  styles/             Tailwind app styles
 ```
 
-### 2. Setup Environment Variables
+## Environment
 
-Create a `.env` file in the root directory:
+Create `.env` from `.env.example`:
 
 ```env
 VITE_NEWS_API_KEY=your_newsapi_key_here
 VITE_AI_TOKEN=your_huggingface_token_here
 ```
 
-**Get API Keys:**
-- NewsAPI: https://newsapi.org
-- Hugging Face: https://huggingface.co/settings/tokens
+Add the same variables in Vercel project settings for deployment.
 
-### 3. Run Development Server
+## Run Locally
 
 ```bash
+npm install
 npm run dev
 ```
 
-### 4. Build for Production
+Open `http://127.0.0.1:5173/`.
+
+For full local serverless proxy behavior, use Vercel CLI:
 
 ```bash
+vercel dev
+```
+
+## Build
+
+```bash
+npm run lint
 npm run build
 ```
 
-## 📁 Project Structure
+## Deployment To Vercel
 
-```
-src/
-├── api/              # API client
-├── components/       # React components
-├── hooks/           # Custom hooks
-├── pages/           # Page components
-├── services/        # Services
-├── store/           # State management
-├── utils/           # Utilities
-├── constants/       # Constants
-└── styles/          # Styles
-```
+1. Push the repository to GitHub.
+2. Import the project in Vercel.
+3. Set `VITE_NEWS_API_KEY` and `VITE_AI_TOKEN`.
+4. Deploy. `vercel.json` routes API requests to serverless functions and all app routes to Vite output.
 
-## 🌐 Deployment
+## API References
 
-### Vercel
-1. Push to GitHub
-2. Import on Vercel
-3. Add environment variables
-4. Deploy!
+- Open Notify: ISS position and people in space
+- OpenStreetMap Nominatim: reverse geocoding
+- NewsAPI: latest categorized articles
+- Hugging Face Inference API: `mistralai/Mistral-7B-Instruct-v0.2`
 
-## 📞 Support
+## Screenshots
 
-For issues, check the console or refer to API documentation.
+Add screenshots after deploying or running locally:
 
----
-
-Built with ❤️ using React, Vite, and Tailwind CSS
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Dashboard overview
+- ISS fullscreen map
+- News dashboard
+- Analytics charts
+- AI chatbot

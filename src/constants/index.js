@@ -1,6 +1,6 @@
 // ISS API
 export const ISS_API_BASE = "http://api.open-notify.org";
-export const ISS_LOCATION_ENDPOINT = `${ISS_API_BASE}/iss/data.json`;
+export const ISS_LOCATION_ENDPOINT = `${ISS_API_BASE}/iss-now.json`;
 export const ASTRONAUTS_ENDPOINT = `${ISS_API_BASE}/astros.json`;
 export const ISS_PASS_ENDPOINT = `${ISS_API_BASE}/iss/over.json`;
 
@@ -9,10 +9,18 @@ export const NEWS_API_BASE = "https://newsapi.org/v2";
 export const NEWS_CATEGORIES = [
   "technology",
   "space",
+  "ai",
+  "world",
   "science",
-  "business",
-  "general",
 ];
+
+export const NEWS_CATEGORY_LABELS = {
+  technology: "Technology",
+  space: "Space",
+  ai: "AI",
+  world: "World",
+  science: "Science",
+};
 
 // Cache Keys
 export const CACHE_KEYS = {
@@ -22,6 +30,8 @@ export const CACHE_KEYS = {
   CHAT_HISTORY: "chat_history",
   THEME: "app_theme",
   SPEED_HISTORY: "speed_history",
+  BOOKMARKS: "news_bookmarks",
+  SOUND: "sound_enabled",
 };
 
 // Cache Duration (in minutes)

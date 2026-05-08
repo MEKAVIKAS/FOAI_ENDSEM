@@ -1,9 +1,4 @@
 import { issApi, geoApi } from "../api/client";
-import {
-  ISS_LOCATION_ENDPOINT,
-  ASTRONAUTS_ENDPOINT,
-  REVERSE_GEO_API,
-} from "../constants";
 import { getStorageWithExpiration, setStorageWithExpiration } from "../utils/helpers";
 
 /**
@@ -11,7 +6,16 @@ import { getStorageWithExpiration, setStorageWithExpiration } from "../utils/hel
  */
 export const fetchISSLocation = async () => {
   try {
-    const response = await issApi.get("/iss/data.json");
+    let response;
+    try {
+      response = await issApi.get("/api/iss-now");
+      if (!response.data?.iss_position) {
+        throw new Error("Local API proxy unavailable");
+      }
+    } catch {
+      response = await issApi.get("http://api.open-notify.org/iss-now.json");
+    }
+
     if (response.data && response.data.iss_position) {
       return {
         latitude: parseFloat(response.data.iss_position.latitude),
@@ -38,7 +42,16 @@ export const fetchAstronauts = async () => {
   }
 
   try {
-    const response = await issApi.get("/astros.json");
+    let response;
+    try {
+      response = await issApi.get("/api/astros");
+      if (!response.data?.people) {
+        throw new Error("Local API proxy unavailable");
+      }
+    } catch {
+      response = await issApi.get("http://api.open-notify.org/astros.json");
+    }
+
     if (response.data) {
       const data = {
         total: response.data.number,
@@ -59,37 +72,59 @@ export const fetchAstronauts = async () => {
  */
 export const reverseGeocode = async (latitude, longitude) => {
   try {
-    const response = await geoApi.get("/reverse", {
-      params: {
-        format: "json",
-        lat: latitude,
-        lon: longitude,
-        zoom: 10,
-      },
-    });
+    let response;
+    try {
+      response = await issApi.get("/api/reverse", {
+        params: { lat: latitude, lon: longitude },
+      });
+      if (!response.data || typeof response.data !== "object" || !("address" in response.data)) {
+        throw new Error("Local API proxy unavailable");
+      }
+    } catch {
+      response = await geoApi.get("/reverse", {
+        params: {
+          format: "json",
+          lat: latitude,
+          lon: longitude,
+          zoom: 10,
+          addressdetails: 1,
+        },
+      });
+    }
 
     if (response.data && response.data.address) {
       const address = response.data.address;
-      const city = address.city || address.town || address.village || "Unknown";
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.hamlet ||
+        address.county ||
+        null;
       const country = address.country || "Unknown";
+      const water =
+        address.ocean ||
+        address.sea ||
+        address.bay ||
+        address.water ||
+        response.data.name;
 
-      // Check if it's over ocean
-      if (address.name && (address.name.includes("Ocean") || address.name.includes("Sea"))) {
+      if (!city && water) {
         return {
           city: "Over Ocean",
-          country: address.name,
+          country: water,
           type: "ocean",
         };
       }
 
       return {
-        city,
+        city: city || "Over Ocean",
         country,
-        type: "land",
+        type: city ? "land" : "ocean",
       };
     }
   } catch (error) {
-    console.error("Error reverse geocoding:", error);
+    console.warn("Reverse geocoding unavailable:", error.message || error);
   }
 
   // If reverse geocoding fails, try to determine if over ocean
@@ -102,9 +137,9 @@ export const reverseGeocode = async (latitude, longitude) => {
   }
 
   return {
-    city: "Unknown Location",
-    country: "Unknown",
-    type: "unknown",
+    city: "Over Ocean",
+    country: "Unknown waters",
+    type: "ocean",
   };
 };
 
@@ -113,7 +148,7 @@ export const reverseGeocode = async (latitude, longitude) => {
  */
 export const fetchISSPassTimes = async (latitude, longitude, n = 5) => {
   try {
-    const response = await issApi.get("/iss/over.json", {
+    const response = await issApi.get("http://api.open-notify.org/iss-pass.json", {
       params: {
         lat: latitude,
         lon: longitude,

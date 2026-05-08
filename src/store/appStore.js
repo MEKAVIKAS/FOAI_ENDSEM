@@ -8,6 +8,13 @@ const useAppStore = create((set) => ({
   issPositions: [],
   speedHistory: [],
   location: null,
+  apiStatus: {
+    iss: "idle",
+    news: "idle",
+    astronauts: "idle",
+    ai: "idle",
+  },
+  lastSynced: null,
 
   // News State
   news: [],
@@ -16,6 +23,8 @@ const useAppStore = create((set) => ({
   selectedCategory: "technology",
   searchQuery: "",
   sortBy: "newest",
+  newsByCategory: {},
+  bookmarkedArticles: JSON.parse(localStorage.getItem("news_bookmarks") || "[]"),
 
   // Astronauts State
   astronauts: null,
@@ -30,6 +39,7 @@ const useAppStore = create((set) => ({
   // Theme State
   theme: localStorage.getItem("app_theme") || "auto",
   isDark: window.matchMedia("(prefers-color-scheme: dark)").matches,
+  soundEnabled: JSON.parse(localStorage.getItem("sound_enabled") || "true"),
 
   // UI State
   sidebarOpen: true,
@@ -52,14 +62,33 @@ const useAppStore = create((set) => ({
       speedHistory: [...state.speedHistory.slice(-29), speed],
     })),
   setLocation: (location) => set({ location }),
+  setApiStatus: (key, value) =>
+    set((state) => ({
+      apiStatus: { ...state.apiStatus, [key]: value },
+      lastSynced: value === "online" ? new Date().toISOString() : state.lastSynced,
+    })),
 
   // Actions - News
   setNews: (news) => set({ news }),
+  setNewsForCategory: (category, articles) =>
+    set((state) => ({
+      news: category === state.selectedCategory ? articles : state.news,
+      newsByCategory: { ...state.newsByCategory, [category]: articles },
+    })),
   setNewsLoading: (loading) => set({ newsLoading: loading }),
   setNewsError: (error) => set({ newsError: error }),
   setSelectedCategory: (category) => set({ selectedCategory: category }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSortBy: (sort) => set({ sortBy: sort }),
+  toggleBookmark: (article) =>
+    set((state) => {
+      const exists = state.bookmarkedArticles.some((item) => item.id === article.id);
+      const bookmarkedArticles = exists
+        ? state.bookmarkedArticles.filter((item) => item.id !== article.id)
+        : [...state.bookmarkedArticles, article];
+      localStorage.setItem("news_bookmarks", JSON.stringify(bookmarkedArticles));
+      return { bookmarkedArticles };
+    }),
 
   // Actions - Astronauts
   setAstronauts: (astronauts) => set({ astronauts }),
@@ -69,7 +98,9 @@ const useAppStore = create((set) => ({
   // Actions - Chat
   addChatMessage: (message) =>
     set((state) => ({
-      chatMessages: [...state.chatMessages, message],
+      chatMessages: Array.isArray(message)
+        ? message.slice(-30)
+        : [...state.chatMessages, message].slice(-30),
     })),
   setChatLoading: (loading) => set({ chatLoading: loading }),
   setChatError: (error) => set({ chatError: error }),
@@ -91,6 +122,16 @@ const useAppStore = create((set) => ({
   toggleChat: () => set((state) => ({ chatOpen: !state.chatOpen })),
   toggleFullscreenMap: () =>
     set((state) => ({ fullscreenMap: !state.fullscreenMap })),
+  setSoundEnabled: (enabled) => {
+    localStorage.setItem("sound_enabled", JSON.stringify(enabled));
+    set({ soundEnabled: enabled });
+  },
+  toggleSound: () =>
+    set((state) => {
+      const soundEnabled = !state.soundEnabled;
+      localStorage.setItem("sound_enabled", JSON.stringify(soundEnabled));
+      return { soundEnabled };
+    }),
 }));
 
 /**

@@ -12,7 +12,7 @@ const createApiClient = (baseURL = "") => {
   return client;
 };
 
-export const issApi = createApiClient("http://api.open-notify.org");
+export const issApi = createApiClient("");
 export const newsApi = createApiClient("https://newsapi.org/v2");
 export const geoApi = createApiClient("https://nominatim.openstreetmap.org");
 

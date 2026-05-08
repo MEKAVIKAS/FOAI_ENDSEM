@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { SpeedChart, NewsDistributionChart } from "../components/charts/Charts";
 import useAppStore from "../store/appStore";

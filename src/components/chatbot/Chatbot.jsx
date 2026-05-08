@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   MessageCircle,
   X,
   Send,
   Trash2,
   Download,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useAppStore from "../../store/appStore";
@@ -14,17 +15,12 @@ import toast from "react-hot-toast";
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => getChatHistory());
   const [loading, setLoading] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
   const messagesEndRef = useRef(null);
   const store = useAppStore();
-  const { iss, astronauts, news, speedHistory } = store;
-
-  // Load chat history on mount
-  useEffect(() => {
-    const history = getChatHistory();
-    setMessages(history);
-  }, []);
+  const { iss, astronauts, news, newsByCategory, speedHistory } = store;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -47,11 +43,18 @@ const Chatbot = () => {
         craft: a.craft,
       })) || [],
     } : null,
-    news: news?.slice(0, 5).map(n => ({
-      title: n.title,
-      source: n.source,
-      publishedAt: n.publishedAt,
-    })) || [],
+    news: Object.values(newsByCategory || {})
+      .flat()
+      .concat(news || [])
+      .filter((article, index, all) => all.findIndex((item) => item.id === article.id) === index)
+      .slice(0, 12)
+      .map(n => ({
+        title: n.title,
+        description: n.description,
+        source: n.source,
+        category: n.category,
+        publishedAt: n.publishedAt,
+      })) || [],
   });
 
   const handleSendMessage = async (e) => {
@@ -63,14 +66,17 @@ const Chatbot = () => {
     setMessages((prev) => [...prev, userMsg]);
     setMessage("");
     setLoading(true);
+    store.setApiStatus("ai", "loading");
 
     try {
       const context = buildContext();
       const response = await sendChatMessage(message, context);
       const aiMsg = saveChatMessage(response, "assistant");
       setMessages((prev) => [...prev, aiMsg]);
+      store.setApiStatus("ai", "online");
     } catch (error) {
       console.error("Chat error:", error);
+      store.setApiStatus("ai", "error");
       toast.error("Failed to send message");
     } finally {
       setLoading(false);
@@ -78,11 +84,10 @@ const Chatbot = () => {
   };
 
   const handleClear = () => {
-    if (confirm("Clear all messages? This cannot be undone.")) {
-      localStorage.removeItem("chat_history");
-      setMessages([]);
-      toast.success("Chat cleared");
-    }
+    localStorage.removeItem("chat_history");
+    setMessages([]);
+    setConfirmClear(false);
+    toast.success("Chat cleared");
   };
 
   const handleExport = () => {
@@ -134,7 +139,7 @@ const Chatbot = () => {
                   <Download size={16} />
                 </button>
                 <button
-                  onClick={handleClear}
+                  onClick={() => setConfirmClear(true)}
                   className="p-1 hover:bg-red-600/20 text-red-400 rounded-lg transition"
                   title="Clear chat"
                 >
@@ -148,7 +153,7 @@ const Chatbot = () => {
               {messages.length === 0 ? (
                 <div className="h-full flex items-center justify-center text-center text-gray-500 text-sm">
                   <p>
-                    👋 Hello! I can answer questions about the ISS and news data.
+                    Hello. I can answer questions about the ISS and news data.
                     <br />
                     Ask me anything!
                   </p>
@@ -215,6 +220,51 @@ const Chatbot = () => {
                 </button>
               </div>
             </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmClear && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clear-chat-title"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 12 }}
+              className="glass w-full max-w-sm rounded-lg p-5 shadow-2xl"
+            >
+              <div className="mb-4 flex items-center gap-3">
+                <AlertTriangle className="text-amber-400" size={22} />
+                <h3 id="clear-chat-title" className="font-bold">
+                  Clear conversation?
+                </h3>
+              </div>
+              <p className="text-sm text-gray-300">
+                This removes the saved local chat history and cannot be undone.
+              </p>
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  onClick={() => setConfirmClear(false)}
+                  className="rounded-lg bg-slate-700 px-4 py-2 text-sm hover:bg-slate-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClear}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium hover:bg-red-700"
+                >
+                  Clear
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

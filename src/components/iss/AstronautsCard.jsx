@@ -1,4 +1,3 @@
-import React from "react";
 import { Users, Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import useAppStore from "../../store/appStore";

@@ -1,4 +1,3 @@
-import React from "react";
 import ISSMap from "../components/iss/ISSMap";
 import ISSStatsCard from "../components/iss/ISSStatsCard";
 import AstronautsCard from "../components/iss/AstronautsCard";
@@ -8,8 +7,8 @@ import { Maximize2 } from "lucide-react";
 import useAppStore from "../store/appStore";
 
 const HomePage = () => {
-  const { iss, loading: issLoading, refetch: refetchISS, speedHistory } = useISSTracking();
-  const { astronauts, loading: astronautsLoading, error: astronautsError } = useAstronauts();
+  const { loading: issLoading, refetch: refetchISS, speedHistory } = useISSTracking();
+  const { loading: astronautsLoading, error: astronautsError } = useAstronauts();
   const { fullscreenMap, toggleFullscreenMap } = useAppStore();
 
   if (fullscreenMap) {
@@ -87,7 +86,7 @@ const HomePage = () => {
           </div>
           <div className="bg-slate-800/50 rounded-lg p-4">
             <p className="text-xs text-gray-400">Speed</p>
-            <p className="text-2xl font-bold">7.66 km/s</p>
+            <p className="text-2xl font-bold">~27,600 km/h</p>
           </div>
           <div className="bg-slate-800/50 rounded-lg p-4">
             <p className="text-xs text-gray-400">Tracked Points</p>

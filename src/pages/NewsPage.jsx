@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { Loader } from "lucide-react";
 import { motion } from "framer-motion";
 import NewsCard from "../components/news/NewsCard";
@@ -8,68 +8,64 @@ import { fetchNewsByCategory, filterArticles, sortArticles } from "../services/n
 import toast from "react-hot-toast";
 
 const NewsPage = () => {
-  const store = useAppStore();
-  const { selectedCategory, searchQuery, sortBy, news } = store;
+  const selectedCategory = useAppStore((state) => state.selectedCategory);
+  const searchQuery = useAppStore((state) => state.searchQuery);
+  const sortBy = useAppStore((state) => state.sortBy);
+  const news = useAppStore((state) => state.news);
   const [loading, setLoading] = useState(false);
-  const [filteredNews, setFilteredNews] = useState(news);
+  const filteredNews = useMemo(() => {
+    const searched = searchQuery ? filterArticles(news, searchQuery) : news;
+    return sortArticles(searched, sortBy);
+  }, [news, searchQuery, sortBy]);
 
   // Fetch news when category changes
   useEffect(() => {
     const fetchNews = async () => {
+      const store = useAppStore.getState();
       try {
         setLoading(true);
+        store.setNewsLoading(true);
+        store.setApiStatus("news", "loading");
         const articles = await fetchNewsByCategory(selectedCategory, 1);
-        store.setNews(articles);
-        setFilteredNews(articles);
+        store.setNewsForCategory(selectedCategory, articles);
+        store.setNewsError(null);
+        store.setApiStatus("news", "online");
         toast.success(`Loaded ${articles.length} articles`);
       } catch (error) {
         console.error("Error fetching news:", error);
+        store.setNewsError(error.message || "Failed to fetch news");
+        store.setApiStatus("news", "error");
         toast.error("Failed to fetch news");
       } finally {
+        store.setNewsLoading(false);
         setLoading(false);
       }
     };
 
     fetchNews();
-  }, [selectedCategory, store]);
-
-  // Filter and sort when criteria changes
-  useEffect(() => {
-    let result = news;
-
-    // Apply search filter
-    if (searchQuery) {
-      result = filterArticles(result, searchQuery);
-    }
-
-    // Apply sorting
-    result = sortArticles(result, sortBy);
-
-    setFilteredNews(result);
-  }, [searchQuery, sortBy, news]);
+  }, [selectedCategory]);
 
   const handleRefresh = async () => {
+    const store = useAppStore.getState();
     try {
       setLoading(true);
-      const articles = await fetchNewsByCategory(selectedCategory, 1);
-      store.setNews(articles);
-      setFilteredNews(articles);
+      store.setApiStatus("news", "loading");
+      const articles = await fetchNewsByCategory(selectedCategory, 1, true);
+      store.setNewsForCategory(selectedCategory, articles);
+      store.setApiStatus("news", "online");
       toast.success("News refreshed!");
     } catch (error) {
       console.error("Error refreshing news:", error);
+      store.setApiStatus("news", "error");
       toast.error("Failed to refresh news");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async (query) => {
-    if (!query.trim()) {
-      setFilteredNews(news);
-      return;
-    }
+  const handleSearch = useCallback(async () => {
     // Search is handled by local filtering
-  };
+  }, []);
 
   return (
     <motion.div

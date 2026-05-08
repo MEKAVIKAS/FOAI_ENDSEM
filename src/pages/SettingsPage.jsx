@@ -1,14 +1,15 @@
-import React from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "../hooks";
 import { THEME_OPTIONS } from "../constants";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Volume2, VolumeX, Bookmark } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import useAppStore from "../store/appStore";
 
 const SettingsPage = () => {
   const { theme, setTheme, toggleTheme } = useTheme();
   const [copied, setCopied] = useState(false);
+  const { soundEnabled, toggleSound, bookmarkedArticles } = useAppStore();
 
   const handleCopyEnv = async () => {
     const envExample = `VITE_NEWS_API_KEY=your_newsapi_key_here
@@ -72,6 +73,27 @@ VITE_AI_TOKEN=your_huggingface_token_here`;
           >
             Toggle Theme
           </button>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass rounded-xl p-6"
+      >
+        <h2 className="text-lg font-bold mb-4">Notifications & Saved News</h2>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            onClick={toggleSound}
+            className="flex items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 font-medium text-gray-200 hover:bg-slate-700"
+          >
+            {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            {soundEnabled ? "Sound On" : "Sound Off"}
+          </button>
+          <div className="flex items-center gap-2 text-sm text-gray-300">
+            <Bookmark size={18} className="text-amber-300" />
+            {bookmarkedArticles.length} bookmarked articles
+          </div>
         </div>
       </motion.div>
 

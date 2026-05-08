@@ -1,9 +1,7 @@
-import React from "react";
 import {
   Globe2,
   Zap,
   MapPin,
-  Clock,
   Gauge,
 } from "lucide-react";
 import { motion } from "framer-motion";
